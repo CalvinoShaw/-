@@ -76,8 +76,11 @@
             left: 50%;
             transform: translate(-50%, -50%);
             color: #fff;
-            font-size: 24px;
+            font-size: 20px;
             z-index: 100;
+            text-align: center;
+            width: 80%;
+            max-width: 400px;
         }
 
         .spinner {
@@ -110,6 +113,29 @@
             border-radius: 10px;
             backdrop-filter: blur(5px);
         }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #8b0000, #ff4444);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .progress-text {
+            margin-top: 15px;
+            font-size: 16px;
+            color: #ccc;
+        }
     </style>
 </head>
 <body>
@@ -117,44 +143,47 @@
         <div class="title">⚔️ 战锤40K 轮播 ⚔️</div>
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            加载中...
+            <div>加载图片中...</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="progress-text" id="progressText">0 / 100</div>
         </div>
         <div id="carousel"></div>
         <div class="carousel-info" id="info">图片 1 / 100</div>
     </div>
 
     <script>
-        // 战锤40K相关图片URL列表（使用Unsplash和其他公开图片源）
-        // 注意：实际应用中，您应该使用自己的图片或有授权的图片
+        // 战锤40K相关图片URL列表
         const imageTopics = [
-            // Unsplash 搜索关键词相关的图片
             'space+marine', 'warhammer', 'sci-fi+warrior', 'futuristic+armor',
             'space+battle', 'alien+war', 'gothic+architecture', 'dystopian+future',
             'mech+warrior', 'space+fortress', 'dark+fantasy', 'armored+soldier',
             'cyberpunk+warrior', 'sci-fi+weapon', 'space+ship+battle', 'futuristic+city',
-            'robot+warrior', 'space+station', 'alien+creature', 'medieval+armor'
+            'robot+warrior', 'space+station', 'alien+creature', 'medieval+armor',
+            'sci-fi+helmet', 'power+armor', 'war+machine', 'epic+battle'
         ];
 
-        // 生成100张图片URL
+        // 生成100张图片URL（使用更小的尺寸以加快加载）
         function generateImageUrls() {
             const urls = [];
-            const baseWidth = 1200;
-            const baseHeight = 800;
+            const baseWidth = 800;
+            const baseHeight = 600;
 
             for (let i = 0; i < 100; i++) {
                 // 使用不同的策略生成图片URL
-                const strategy = i % 3;
+                const strategy = i % 4;
+                const topic = imageTopics[i % imageTopics.length];
 
-                if (strategy === 0) {
-                    // 使用Unsplash随机图片API
-                    const topic = imageTopics[i % imageTopics.length];
+                if (strategy === 0 || strategy === 1) {
+                    // 主要使用Unsplash，提供高质量图片
                     urls.push(`https://source.unsplash.com/${baseWidth}x${baseHeight}/?${topic}&sig=${i}`);
-                } else if (strategy === 1) {
-                    // 使用Picsum随机图片
-                    urls.push(`https://picsum.photos/${baseWidth}/${baseHeight}?random=${i}`);
-                } else {
-                    // 使用Unsplash collection (战斗、科幻主题)
+                } else if (strategy === 2) {
+                    // 使用Unsplash collection
                     urls.push(`https://source.unsplash.com/collection/1163637/${baseWidth}x${baseHeight}?sig=${i}`);
+                } else {
+                    // 使用Picsum作为备选
+                    urls.push(`https://picsum.photos/${baseWidth}/${baseHeight}?random=${i}`);
                 }
             }
 
@@ -171,48 +200,91 @@
             return shuffled;
         }
 
-        // 初始化轮播
+        // 初始化变量
         let imageUrls = generateImageUrls();
         let shuffledUrls = shuffleArray(imageUrls);
         let currentIndex = 0;
         let carouselInterval;
+        let preloadedImages = [];
 
         const carousel = document.getElementById('carousel');
         const info = document.getElementById('info');
         const loading = document.getElementById('loading');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
 
-        // 预加载图片
-        function preloadImages(urls, callback) {
+        // 改进的预加载函数，带进度显示
+        function preloadAllImages(urls, onProgress, onComplete) {
             let loadedCount = 0;
+            let successCount = 0;
             const totalImages = urls.length;
+            preloadedImages = new Array(totalImages);
 
             urls.forEach((url, index) => {
                 const img = new Image();
-                img.onload = img.onerror = () => {
+
+                // 设置缓存策略
+                img.crossOrigin = "anonymous";
+
+                img.onload = () => {
                     loadedCount++;
-                    if (loadedCount === totalImages) {
-                        callback();
-                    }
+                    successCount++;
+                    preloadedImages[index] = img;
+                    updateProgress(loadedCount, totalImages, onProgress, onComplete);
                 };
+
+                img.onerror = () => {
+                    loadedCount++;
+                    // 加载失败时使用占位符
+                    const placeholderImg = new Image();
+                    placeholderImg.src = `https://via.placeholder.com/800x600/1a1a1a/8b0000?text=Warhammer+40K+${index + 1}`;
+                    preloadedImages[index] = placeholderImg;
+                    updateProgress(loadedCount, totalImages, onProgress, onComplete);
+                };
+
                 img.src = url;
             });
         }
 
-        // 创建轮播幻灯片
+        function updateProgress(loaded, total, onProgress, onComplete) {
+            const percent = Math.round((loaded / total) * 100);
+
+            if (onProgress) {
+                onProgress(loaded, total, percent);
+            }
+
+            // 当加载到一定数量时就可以开始播放
+            if (loaded >= Math.min(30, total) && !carousel.hasChildNodes()) {
+                console.log(`已加载${loaded}张图片，开始显示轮播`);
+                if (onComplete) {
+                    onComplete();
+                }
+            } else if (loaded === total) {
+                console.log('所有图片加载完成！');
+            }
+        }
+
+        // 创建轮播幻灯片（使用预加载的图片）
         function createSlides() {
             carousel.innerHTML = '';
+
             shuffledUrls.forEach((url, index) => {
                 const slide = document.createElement('div');
                 slide.className = 'carousel-slide';
                 if (index === 0) slide.classList.add('active');
 
-                const img = document.createElement('img');
-                img.src = url;
+                // 使用已预加载的图片
+                const originalIndex = imageUrls.indexOf(url);
+                const img = preloadedImages[originalIndex] ? preloadedImages[originalIndex].cloneNode() : new Image();
+
+                if (!img.src) {
+                    img.src = url;
+                    img.onerror = function() {
+                        this.src = `https://via.placeholder.com/800x600/1a1a1a/8b0000?text=Warhammer+40K+${index + 1}`;
+                    };
+                }
+
                 img.alt = `战锤40K 图片 ${index + 1}`;
-                img.onerror = function() {
-                    // 如果图片加载失败，使用备用图片
-                    this.src = `https://via.placeholder.com/1200x800/1a1a1a/8b0000?text=Warhammer+40K+Image+${index + 1}`;
-                };
 
                 slide.appendChild(img);
                 carousel.appendChild(slide);
@@ -222,6 +294,8 @@
         // 显示下一张图片
         function showNextSlide() {
             const slides = document.querySelectorAll('.carousel-slide');
+            if (slides.length === 0) return;
+
             slides[currentIndex].classList.remove('active');
 
             currentIndex = (currentIndex + 1) % shuffledUrls.length;
@@ -247,22 +321,57 @@
 
             // 每3秒切换一次
             carouselInterval = setInterval(showNextSlide, 3000);
+
+            console.log('轮播已启动！');
         }
 
         // 初始化
-        console.log('开始加载战锤40K图片轮播...');
-        // 预加载前10张图片后开始播放
-        preloadImages(shuffledUrls.slice(0, 10), () => {
-            console.log('初始图片加载完成，开始轮播');
-            startCarousel();
-        });
+        console.log('开始预加载100张战锤40K图片...');
+
+        preloadAllImages(
+            imageUrls,
+            // 进度回调
+            (loaded, total, percent) => {
+                progressBar.style.width = percent + '%';
+                progressText.textContent = `${loaded} / ${total} (${percent}%)`;
+            },
+            // 完成回调（加载30张后触发）
+            () => {
+                startCarousel();
+            }
+        );
 
         // 键盘控制
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
                 clearInterval(carouselInterval);
                 showNextSlide();
                 carouselInterval = setInterval(showNextSlide, 3000);
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                clearInterval(carouselInterval);
+                // 返回上一张
+                const slides = document.querySelectorAll('.carousel-slide');
+                if (slides.length > 0) {
+                    slides[currentIndex].classList.remove('active');
+                    currentIndex = (currentIndex - 1 + shuffledUrls.length) % shuffledUrls.length;
+                    slides[currentIndex].classList.add('active');
+                    info.textContent = `图片 ${currentIndex + 1} / ${shuffledUrls.length}`;
+                }
+                carouselInterval = setInterval(showNextSlide, 3000);
+            }
+        });
+
+        // 点击图片暂停/继续
+        carousel.addEventListener('click', () => {
+            if (carouselInterval) {
+                clearInterval(carouselInterval);
+                carouselInterval = null;
+                info.textContent = `图片 ${currentIndex + 1} / ${shuffledUrls.length} [已暂停]`;
+            } else {
+                carouselInterval = setInterval(showNextSlide, 3000);
+                info.textContent = `图片 ${currentIndex + 1} / ${shuffledUrls.length}`;
             }
         });
     </script>
