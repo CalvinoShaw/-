@@ -213,65 +213,40 @@
     </div>
 
     <script>
-        // 战锤40K主题关键词 - 中英文结合
+        // 战锤40K主题关键词 - 用于图片标识和备用源
         const warhammer40kKeywords = [
-            // 核心概念
-            'warhammer+40k', 'warhammer+40000', 'space+marine', 'imperium',
-            'emperor', 'chaos', 'xenos', 'heresy',
-
-            // 帝国势力
-            'space+marine+armor', 'imperial+guard', 'adeptus+astartes',
-            'ultramarines', 'blood+angels', 'dark+angels', 'space+wolves',
-            'imperial+knight', 'titan+warhammer', 'adeptus+mechanicus',
-
-            // 混沌势力
-            'chaos+space+marine', 'chaos+god', 'khorne', 'nurgle',
-            'tzeentch', 'slaanesh', 'chaos+daemon', 'chaos+warrior',
-
-            // 异种族
-            'ork+warhammer', 'eldar', 'tau+empire', 'tyranid',
-            'necron', 'dark+eldar', 'ork+warboss',
-
-            // 场景与装备
-            'power+armor', 'bolter', 'chainsword', 'dreadnought',
-            'battle+barge', 'gothic+cathedral', 'hive+city', 'battlefield',
-            'terminator+armor', 'plasma+gun', 'space+hulk',
-
-            // 风格关键词（帮助找到相似风格的图片）
-            'grimdark', 'gothic+sci-fi', 'dark+future', 'dieselpunk+armor',
-            'futuristic+warrior', 'space+warfare', 'dystopian+soldier',
-            'cybernetic+warrior', 'armored+soldier', 'medieval+futuristic',
-
-            // 氛围关键词
-            'epic+battle', 'war+machine', 'dark+cathedral', 'industrial+gothic',
-            'apocalyptic+war', 'space+fortress', 'military+sci-fi',
-            'brutal+combat', 'heroic+warrior', 'ancient+technology'
+            'warhammer 40k', 'space marine', 'imperium', 'emperor', 'chaos',
+            'imperial guard', 'adeptus astartes', 'ultramarines', 'blood angels',
+            'dark angels', 'space wolves', 'imperial knight', 'titan',
+            'chaos warrior', 'khorne', 'nurgle', 'tzeentch', 'slaanesh',
+            'ork', 'eldar', 'tau empire', 'tyranid', 'necron',
+            'power armor', 'bolter', 'chainsword', 'dreadnought',
+            'gothic cathedral', 'hive city', 'battlefield', 'epic battle'
         ];
 
-        // 生成100张图片URL - 使用战锤40K主题搜索
+        // 生成100张图片URL - 使用picsum.photos作为主源
         function generateImageUrls() {
             const urls = [];
             const width = 800;
             const height = 600;
 
             for (let i = 0; i < 100; i++) {
-                // 循环使用关键词，确保多样性
+                // 使用主题关键词作为标识
                 const keyword = warhammer40kKeywords[i % warhammer40kKeywords.length];
-                const seed = Math.floor(Math.random() * 10000);
 
-                // 为每张图片生成多个备选源
+                // 为每张图片生成多个备选源 - picsum.photos为主源
                 urls.push({
                     id: i + 1,
                     keyword: keyword,
                     sources: [
-                        // Unsplash 搜索 - 主源，使用战锤40K关键词
-                        `https://source.unsplash.com/${width}x${height}/?${keyword}`,
-                        // Unsplash random with keyword
-                        `https://source.unsplash.com/random/${width}x${height}/?${keyword}`,
-                        // Lorem Picsum 作为备选
-                        `https://picsum.photos/seed/${keyword.replace(/\+/g, '')}${i}/800/600`,
-                        // 带主题标签的占位符
-                        `https://via.placeholder.com/800x600/1a1a2e/eee?text=Warhammer+40K+${i + 1}`,
+                        // 主源1: picsum.photos 随机图片（非常可靠）
+                        `https://picsum.photos/${width}/${height}?random=${i}`,
+                        // 主源2: picsum.photos 使用seed确保一致性
+                        `https://picsum.photos/seed/wh40k${i}/${width}/${height}`,
+                        // 备选源3: picsum.photos 不同参数
+                        `https://picsum.photos/seed/${1000 + i}/${width}/${height}`,
+                        // 备选源4: Placeholder 带标签
+                        `https://via.placeholder.com/${width}x${height}/1a1a2e/eee?text=Warhammer+40K+${i + 1}`,
                     ]
                 });
             }

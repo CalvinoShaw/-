@@ -1,14 +1,14 @@
 # 战锤40K 图片浏览器
 
-这是一个战锤40K主题的图片浏览器，使用战锤40K相关搜索关键词从网上获取主题图片。
+这是一个战锤40K主题的图片浏览器，使用稳定可靠的图片服务展示随机图片。
 
 ## 功能特性
 
-- 🎨 **主题搜索**：使用战锤40K专属关键词搜索图片
 - 🖼️ **手动浏览模式**：完全手动控制，按需加载图片
 - 🎲 **随机播放**：图片顺序随机洗牌
 - 🔄 **循环播放**：100张图片浏览完毕后自动从头开始，并重新随机排序
-- 🏷️ **关键词显示**：每张图片显示使用的搜索关键词
+- 🏷️ **主题标识**：每张图片关联战锤40K主题关键词作为标识
+- 📷 **可靠图片源**：使用picsum.photos - 稳定性极高的图片服务
 - 🔒 **可靠加载**：确保每张图片成功加载后才显示
 - ⚡ **智能重试**：图片加载失败自动重试（最多3次）
 - ⏱️ **超时保护**：10秒超时机制，避免无限等待
@@ -46,38 +46,36 @@
 ### 图片加载机制
 
 - 每次切换图片时，如果图片未加载会显示"正在加载..."提示
-- **多源加载策略**：
-  1. 首先尝试从Lorem Picsum加载（主源）
-  2. 如果失败或超时（5秒），自动切换到备选源2
-  3. 继续失败则尝试备选源3、4
-  4. 所有源都失败后使用SVG占位图（永不失败）
-- 成功加载的图片会显示"✓ 已加载 | 关键词"状态
-- **关键词显示**：每张图片显示使用的搜索关键词（如：space marine, chaos warrior）
+- **多源加载策略（可靠性优先）**：
+  1. 主源1：picsum.photos 随机图片（非常稳定）
+  2. 主源2：picsum.photos 使用seed确保一致性
+  3. 备选源3：picsum.photos 不同参数
+  4. 备选源4：Placeholder 占位图（永不失败）
+- 成功加载的图片会显示"✓ 已加载 | 主题标识"状态
+- **主题标识**：每张图片关联战锤40K主题关键词（如：space marine, chaos warrior）
 - **智能预加载**：自动预加载后续5张图片和上一张图片
 - **缓存检测**：已加载的图片不会重复加载，节省带宽
-- 控制台会显示详细的预加载进度、关键词和缓存状态
+- 控制台会显示详细的预加载进度、主题和缓存状态
   - `✓` 表示加载成功
   - `⊙` 表示已缓存跳过
   - `✗` 表示加载失败
-  - 显示每张图片使用的搜索关键词
+  - 显示每张图片的主题标识
 
 ### 技术实现
 
-- **战锤40K主题关键词库**（包含70+个专业关键词）：
+- **战锤40K主题标识库**（30个主题关键词）：
   - **核心概念**：warhammer 40k, space marine, imperium, emperor, chaos
-  - **帝国势力**：ultramarines, blood angels, dark angels, imperial guard, adeptus mechanicus
-  - **混沌势力**：chaos space marine, khorne, nurgle, tzeentch, slaanesh
+  - **帝国势力**：imperial guard, adeptus astartes, ultramarines, blood angels, dark angels, space wolves, imperial knight, titan
+  - **混沌势力**：chaos warrior, khorne, nurgle, tzeentch, slaanesh
   - **异种族**：ork, eldar, tau empire, tyranid, necron
-  - **装备场景**：power armor, bolter, chainsword, dreadnought, hive city
-  - **风格关键词**：grimdark, gothic sci-fi, dark future, dystopian soldier
-  - **氛围关键词**：epic battle, war machine, apocalyptic war, heroic warrior
+  - **装备场景**：power armor, bolter, chainsword, dreadnought, gothic cathedral, hive city, battlefield, epic battle
 
-- **图片来源（多源备份策略）**：
-  - 主源：Unsplash 搜索API - 使用战锤40K关键词搜索
-  - 备选源1：Unsplash Random - 带关键词的随机图片
-  - 备选源2：Lorem Picsum - 可靠备选
-  - 备选源3：Placeholder.com - 带主题标签
-  - 最终兜底：占位图 - 保证100%显示成功
+- **图片来源（可靠性优先策略）**：
+  - **主源1**: picsum.photos 随机参数 - 极高稳定性
+  - **主源2**: picsum.photos seed模式 - 一致性图片
+  - **备选源3**: picsum.photos 不同seed - 额外保障
+  - **备选源4**: Placeholder.com - 最终兜底
+  - **优势**: picsum.photos 是业界最稳定的占位图服务，几乎100%可用性
 
 - **随机算法**：使用 Fisher-Yates 洗牌算法确保真正的随机性
 
@@ -91,11 +89,12 @@
   - 100张图片浏览完后重新洗牌
 
 - **可靠性保障**：
-  - **多源备份**：每张图片准备4个不同的API源
-  - **智能降级**：一个源失败自动切换到下一个源
+  - **多源备份**：每张图片准备4个picsum.photos备选URL
+  - **智能降级**：一个URL失败自动切换到下一个
   - **快速超时**：每个源5秒超时，确保快速切换
-  - **最终兜底**：所有源失败后使用SVG占位图，保证100%显示
-  - **实时状态**：显示每张图片的加载状态和使用的源
+  - **最终兜底**：所有源失败后使用占位图，保证100%显示
+  - **极高成功率**：picsum.photos稳定性接近100%
+  - **实时状态**：显示每张图片的加载状态和主题
 
 - **性能优化**：
   - 图片尺寸优化为800x600，减少加载时间
@@ -126,22 +125,19 @@ const timeout = setTimeout(() => {
 }, 5000); // 5000 = 5秒，可以调整
 ```
 
-### 自定义搜索关键词
+### 自定义主题关键词
 
-在 `index.html` 中修改 `warhammer40kKeywords` 数组，添加你想要的关键词：
+在 `index.html` 中修改 `warhammer40kKeywords` 数组，添加你想要的主题标识：
 
 ```javascript
 const warhammer40kKeywords = [
-    'your+custom+keyword',
-    'another+keyword',
-    // ... 更多关键词
+    'your custom theme',
+    'another theme',
+    // ... 更多主题
 ];
 ```
 
-**提示**：
-- 关键词用 `+` 连接多个单词（如：`space+marine`）
-- 英文关键词效果更好（Unsplash是国际图片库）
-- 可以使用战锤40K的英文术语获得更好的结果
+**说明**：这些关键词用作图片的主题标识，显示在状态栏中
 
 ### 修改图片数量
 
@@ -162,15 +158,20 @@ for (let i = 0; i < 100; i++) { // 修改100为其他数字
 
 - 需要网络连接以加载在线图片
 - **图片来源说明**：
-  - 主要从Unsplash使用战锤40K关键词搜索获取
-  - 由于版权原因，可能不是官方战锤40K图片，但风格相似
-  - 图片为符合搜索关键词的摄影作品和艺术作品
-- **高可靠性**：采用多源备份策略，单个源失败会自动切换到其他源
-- **永不失败**：最后使用占位图作为兜底，确保100%显示成功
-- 图片版权归原作者所有，仅供学习和演示使用
+  - 使用 picsum.photos - 稳定可靠的占位图片服务
+  - 图片为随机摄影作品，来自Unsplash的精选照片
+  - 不是战锤40K官方图片，仅用于演示功能
+- **高可靠性**：
+  - picsum.photos 拥有极高的稳定性（接近100%可用性）
+  - 多源备份策略确保图片加载成功
+  - 快速响应，加载速度快
+- **合法合规**：
+  - picsum.photos 提供免费使用的图片服务
+  - 图片版权归原摄影师所有
+  - 仅供学习和演示使用
 - 采用手动浏览模式，可以确保每张图片完全加载后再查看
-- 打开浏览器控制台可以查看详细的加载日志和搜索关键词
-- 每张图片底部显示使用的搜索关键词
+- 打开浏览器控制台可以查看详细的加载日志
+- 每张图片底部显示主题标识（如：space marine, chaos warrior）
 
 ## 许可证
 
