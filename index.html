@@ -213,26 +213,38 @@
     </div>
 
     <script>
-        // 战锤40K相关图片URL列表
-        const imageTopics = [
-            'space+marine', 'warhammer', 'sci-fi+warrior', 'futuristic+armor',
-            'space+battle', 'alien+war', 'gothic+architecture', 'dystopian+future',
-            'mech+warrior', 'space+fortress', 'dark+fantasy', 'armored+soldier',
-            'cyberpunk+warrior', 'sci-fi+weapon', 'space+ship+battle', 'futuristic+city',
-            'robot+warrior', 'space+station', 'alien+creature', 'medieval+armor',
-            'sci-fi+helmet', 'power+armor', 'war+machine', 'epic+battle'
+        // 战锤40K主题相关的类别和种子
+        const imageThemes = [
+            'space', 'dark', 'warrior', 'armor', 'battle', 'fortress',
+            'gothic', 'future', 'mech', 'robot', 'alien', 'weapon',
+            'city', 'architecture', 'soldier', 'machine', 'medieval',
+            'cyberpunk', 'ship', 'station', 'creature', 'helmet',
+            'power', 'war', 'epic'
         ];
 
-        // 生成100张图片URL
+        // 生成100张图片URL - 使用多个可靠的图片源
         function generateImageUrls() {
             const urls = [];
-            const baseWidth = 800;
-            const baseHeight = 600;
+            const width = 800;
+            const height = 600;
 
             for (let i = 0; i < 100; i++) {
-                const topic = imageTopics[i % imageTopics.length];
-                // 只使用Unsplash，更可靠
-                urls.push(`https://source.unsplash.com/${baseWidth}x${baseHeight}/?${topic}&sig=${i}&cache=${Date.now()}`);
+                const seed = Math.floor(Math.random() * 10000);
+
+                // 为每张图片生成多个备选源
+                urls.push({
+                    id: i + 1,
+                    sources: [
+                        // Lorem Picsum - 非常稳定可靠
+                        `https://picsum.photos/seed/${seed + i}/800/600`,
+                        // 备选：Lorem Picsum 不同种子
+                        `https://picsum.photos/seed/wh40k${i}/800/600`,
+                        // 备选：Placeholder.com 带标签
+                        `https://via.placeholder.com/800x600/1a1a2e/eee?text=Warhammer+40K+${i + 1}`,
+                        // 备选：DummyImage
+                        `https://dummyimage.com/800x600/1a1a2e/fff&text=Image+${i + 1}`,
+                    ]
+                });
             }
 
             return urls;
@@ -249,8 +261,8 @@
         }
 
         // 初始化变量
-        let imageUrls = generateImageUrls();
-        let shuffledUrls = shuffleArray(imageUrls);
+        let imageData = generateImageUrls();
+        let shuffledData = shuffleArray(imageData);
         let currentIndex = 0;
         let imageCache = {};
         let loadedImages = new Set();
@@ -263,69 +275,76 @@
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
 
-        // 可靠的图片加载函数
-        function loadImageReliably(url, index, maxRetries = 2) {
+        // 尝试从多个源加载图片
+        function loadImageFromSources(sources, index) {
             return new Promise((resolve, reject) => {
-                let attempts = 0;
+                let currentSourceIndex = 0;
 
-                function attemptLoad() {
+                function tryNextSource() {
+                    if (currentSourceIndex >= sources.length) {
+                        console.error(`图片 ${index + 1} 所有源都加载失败`);
+                        reject(new Error('所有图片源都失败'));
+                        return;
+                    }
+
+                    const url = sources[currentSourceIndex];
+                    console.log(`尝试加载图片 ${index + 1}，源 ${currentSourceIndex + 1}/${sources.length}: ${url.substring(0, 50)}...`);
+
                     const img = new Image();
                     img.crossOrigin = "anonymous";
 
+                    // 5秒超时
                     const timeout = setTimeout(() => {
-                        img.src = ''; // 取消加载
-                        if (attempts < maxRetries) {
-                            attempts++;
-                            console.log(`重试加载图片 ${index + 1}, 尝试 ${attempts + 1}/${maxRetries + 1}`);
-                            attemptLoad();
-                        } else {
-                            console.error(`图片 ${index + 1} 加载失败，使用占位符`);
-                            // 使用占位符
-                            const placeholderImg = new Image();
-                            placeholderImg.src = `https://via.placeholder.com/800x600/1a1a1a/8b0000?text=Warhammer+40K+Image+${index + 1}`;
-                            placeholderImg.onload = () => resolve(placeholderImg);
-                            placeholderImg.onerror = () => resolve(placeholderImg);
-                        }
-                    }, 10000); // 10秒超时
+                        img.src = '';
+                        console.warn(`图片 ${index + 1} 源 ${currentSourceIndex + 1} 超时`);
+                        currentSourceIndex++;
+                        tryNextSource();
+                    }, 5000);
 
                     img.onload = () => {
                         clearTimeout(timeout);
-                        console.log(`图片 ${index + 1} 加载成功`);
+                        console.log(`✓ 图片 ${index + 1} 从源 ${currentSourceIndex + 1} 加载成功`);
                         loadedImages.add(index);
                         resolve(img);
                     };
 
                     img.onerror = () => {
                         clearTimeout(timeout);
-                        if (attempts < maxRetries) {
-                            attempts++;
-                            console.log(`图片 ${index + 1} 加载失败，重试 ${attempts + 1}/${maxRetries + 1}`);
-                            setTimeout(attemptLoad, 1000);
-                        } else {
-                            console.error(`图片 ${index + 1} 加载失败，使用占位符`);
-                            const placeholderImg = new Image();
-                            placeholderImg.src = `https://via.placeholder.com/800x600/1a1a1a/8b0000?text=Warhammer+40K+Image+${index + 1}`;
-                            placeholderImg.onload = () => resolve(placeholderImg);
-                            placeholderImg.onerror = () => resolve(placeholderImg);
-                        }
+                        console.warn(`图片 ${index + 1} 源 ${currentSourceIndex + 1} 加载失败`);
+                        currentSourceIndex++;
+                        tryNextSource();
                     };
 
                     img.src = url;
                 }
 
-                attemptLoad();
+                tryNextSource();
             });
+        }
+
+        // 可靠的图片加载函数
+        async function loadImageReliably(imageItem, index) {
+            try {
+                const img = await loadImageFromSources(imageItem.sources, index);
+                return img;
+            } catch (error) {
+                console.error(`图片 ${index + 1} 加载失败，使用最终占位符`, error);
+                // 最终兜底方案
+                const placeholderImg = new Image();
+                placeholderImg.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600'%3E%3Crect fill='%231a1a2e' width='800' height='600'/%3E%3Ctext fill='%23eee' font-size='24' font-family='Arial' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle'%3EWarhammer 40K%0AImage ${index + 1}%3C/text%3E%3C/svg%3E`;
+                return placeholderImg;
+            }
         }
 
         // 预加载图片
         async function preloadImages() {
-            console.log('开始预加载图片...');
+            console.log('开始预加载前5张图片...');
 
-            // 预加载前5张图片
-            for (let i = 0; i < Math.min(5, shuffledUrls.length); i++) {
+            for (let i = 0; i < Math.min(5, shuffledData.length); i++) {
                 try {
-                    const img = await loadImageReliably(shuffledUrls[i], i);
+                    const img = await loadImageReliably(shuffledData[i], i);
                     imageCache[i] = img;
+                    console.log(`预加载进度: ${i + 1}/5`);
                 } catch (error) {
                     console.error(`预加载图片 ${i + 1} 失败`, error);
                 }
@@ -357,7 +376,7 @@
             // 如果图片未缓存，先加载
             if (!imageCache[index]) {
                 try {
-                    const img = await loadImageReliably(shuffledUrls[index], index);
+                    const img = await loadImageReliably(shuffledData[index], index);
                     imageCache[index] = img;
                 } catch (error) {
                     console.error(`加载图片 ${index + 1} 失败`, error);
@@ -371,14 +390,14 @@
                 img.alt = `战锤40K 图片 ${index + 1}`;
                 slide.appendChild(img);
 
-                const loadedStatus = loadedImages.has(index) ? '✓ 已加载' : '使用占位符';
+                const loadedStatus = loadedImages.has(index) ? '✓ 已加载' : '占位图';
                 loadStatus.textContent = loadedStatus;
             } else {
                 loadStatus.textContent = '加载失败';
             }
 
             imageLoading.classList.remove('show');
-            info.innerHTML = `图片 ${index + 1} / ${shuffledUrls.length}<br><span class="loading-status">${loadStatus.textContent}</span>`;
+            info.innerHTML = `图片 ${index + 1} / ${shuffledData.length}<br><span class="loading-status">${loadStatus.textContent}</span>`;
 
             // 预加载下一张和上一张
             preloadAdjacentImages(index);
@@ -386,34 +405,38 @@
 
         // 预加载相邻的图片
         async function preloadAdjacentImages(index) {
-            const nextIndex = (index + 1) % shuffledUrls.length;
-            const prevIndex = (index - 1 + shuffledUrls.length) % shuffledUrls.length;
+            const nextIndex = (index + 1) % shuffledData.length;
+            const prevIndex = (index - 1 + shuffledData.length) % shuffledData.length;
 
             // 预加载下一张
             if (!imageCache[nextIndex]) {
-                loadImageReliably(shuffledUrls[nextIndex], nextIndex).then(img => {
+                loadImageReliably(shuffledData[nextIndex], nextIndex).then(img => {
                     imageCache[nextIndex] = img;
-                    console.log(`预加载下一张完成: ${nextIndex + 1}`);
+                    console.log(`后台预加载下一张完成: ${nextIndex + 1}`);
+                }).catch(err => {
+                    console.error(`预加载下一张失败: ${nextIndex + 1}`, err);
                 });
             }
 
             // 预加载上一张
             if (!imageCache[prevIndex]) {
-                loadImageReliably(shuffledUrls[prevIndex], prevIndex).then(img => {
+                loadImageReliably(shuffledData[prevIndex], prevIndex).then(img => {
                     imageCache[prevIndex] = img;
-                    console.log(`预加载上一张完成: ${prevIndex + 1}`);
+                    console.log(`后台预加载上一张完成: ${prevIndex + 1}`);
+                }).catch(err => {
+                    console.error(`预加载上一张失败: ${prevIndex + 1}`, err);
                 });
             }
         }
 
         // 显示下一张图片
         async function showNextSlide() {
-            currentIndex = (currentIndex + 1) % shuffledUrls.length;
+            currentIndex = (currentIndex + 1) % shuffledData.length;
 
             // 如果回到开头，重新洗牌
             if (currentIndex === 0) {
                 console.log('重新开始循环，重新洗牌...');
-                shuffledUrls = shuffleArray(imageUrls);
+                shuffledData = shuffleArray(imageData);
                 imageCache = {};
                 loadedImages.clear();
             }
@@ -423,7 +446,7 @@
 
         // 显示上一张图片
         async function showPrevSlide() {
-            currentIndex = (currentIndex - 1 + shuffledUrls.length) % shuffledUrls.length;
+            currentIndex = (currentIndex - 1 + shuffledData.length) % shuffledData.length;
             await showImage(currentIndex);
         }
 
@@ -437,6 +460,7 @@
 
         // 初始化
         console.log('准备战锤40K图片浏览器...');
+        console.log('使用多源加载策略，确保图片可靠显示');
 
         preloadImages().then(() => {
             startViewer();
