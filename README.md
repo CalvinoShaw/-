@@ -1,12 +1,14 @@
-# 战锤40K 图片轮播
+# 战锤40K 图片浏览器
 
-这是一个自动轮播战锤40K主题图片的网页应用。
+这是一个战锤40K主题的图片浏览器，使用战锤40K相关搜索关键词从网上获取主题图片。
 
 ## 功能特性
 
+- 🎨 **主题搜索**：使用战锤40K专属关键词搜索图片
 - 🖼️ **手动浏览模式**：完全手动控制，按需加载图片
 - 🎲 **随机播放**：图片顺序随机洗牌
 - 🔄 **循环播放**：100张图片浏览完毕后自动从头开始，并重新随机排序
+- 🏷️ **关键词显示**：每张图片显示使用的搜索关键词
 - 🔒 **可靠加载**：确保每张图片成功加载后才显示
 - ⚡ **智能重试**：图片加载失败自动重试（最多3次）
 - ⏱️ **超时保护**：10秒超时机制，避免无限等待
@@ -49,22 +51,33 @@
   2. 如果失败或超时（5秒），自动切换到备选源2
   3. 继续失败则尝试备选源3、4
   4. 所有源都失败后使用SVG占位图（永不失败）
-- 成功加载的图片会显示"✓ 已加载"状态
+- 成功加载的图片会显示"✓ 已加载 | 关键词"状态
+- **关键词显示**：每张图片显示使用的搜索关键词（如：space marine, chaos warrior）
 - **智能预加载**：自动预加载后续5张图片和上一张图片
 - **缓存检测**：已加载的图片不会重复加载，节省带宽
-- 控制台会显示详细的预加载进度和缓存状态
+- 控制台会显示详细的预加载进度、关键词和缓存状态
   - `✓` 表示加载成功
   - `⊙` 表示已缓存跳过
   - `✗` 表示加载失败
+  - 显示每张图片使用的搜索关键词
 
 ### 技术实现
 
+- **战锤40K主题关键词库**（包含70+个专业关键词）：
+  - **核心概念**：warhammer 40k, space marine, imperium, emperor, chaos
+  - **帝国势力**：ultramarines, blood angels, dark angels, imperial guard, adeptus mechanicus
+  - **混沌势力**：chaos space marine, khorne, nurgle, tzeentch, slaanesh
+  - **异种族**：ork, eldar, tau empire, tyranid, necron
+  - **装备场景**：power armor, bolter, chainsword, dreadnought, hive city
+  - **风格关键词**：grimdark, gothic sci-fi, dark future, dystopian soldier
+  - **氛围关键词**：epic battle, war machine, apocalyptic war, heroic warrior
+
 - **图片来源（多源备份策略）**：
-  - 主源：Lorem Picsum (picsum.photos) - 稳定可靠的图片服务
-  - 备选源1：Lorem Picsum 不同种子
-  - 备选源2：Placeholder.com - 带文字标签
-  - 备选源3：DummyImage.com - 简洁占位图
-  - 最终兜底：SVG Data URI - 保证100%显示成功
+  - 主源：Unsplash 搜索API - 使用战锤40K关键词搜索
+  - 备选源1：Unsplash Random - 带关键词的随机图片
+  - 备选源2：Lorem Picsum - 可靠备选
+  - 备选源3：Placeholder.com - 带主题标签
+  - 最终兜底：占位图 - 保证100%显示成功
 
 - **随机算法**：使用 Fisher-Yates 洗牌算法确保真正的随机性
 
@@ -113,24 +126,29 @@ const timeout = setTimeout(() => {
 }, 5000); // 5000 = 5秒，可以调整
 ```
 
+### 自定义搜索关键词
+
+在 `index.html` 中修改 `warhammer40kKeywords` 数组，添加你想要的关键词：
+
+```javascript
+const warhammer40kKeywords = [
+    'your+custom+keyword',
+    'another+keyword',
+    // ... 更多关键词
+];
+```
+
+**提示**：
+- 关键词用 `+` 连接多个单词（如：`space+marine`）
+- 英文关键词效果更好（Unsplash是国际图片库）
+- 可以使用战锤40K的英文术语获得更好的结果
+
 ### 修改图片数量
 
 在 `generateImageUrls()` 函数中修改循环次数：
 
 ```javascript
 for (let i = 0; i < 100; i++) { // 修改100为其他数字
-```
-
-### 使用自己的图片
-
-如果你想使用自己的战锤40K图片，可以直接替换 `imageUrls` 数组：
-
-```javascript
-const imageUrls = [
-    'your-image-url-1.jpg',
-    'your-image-url-2.jpg',
-    // ... 更多图片URL
-];
 ```
 
 ## 浏览器兼容性
@@ -143,12 +161,16 @@ const imageUrls = [
 ## 注意事项
 
 - 需要网络连接以加载在线图片
-- 图片来源于多个稳定的占位图片服务（Lorem Picsum、Placeholder.com等）
+- **图片来源说明**：
+  - 主要从Unsplash使用战锤40K关键词搜索获取
+  - 由于版权原因，可能不是官方战锤40K图片，但风格相似
+  - 图片为符合搜索关键词的摄影作品和艺术作品
 - **高可靠性**：采用多源备份策略，单个源失败会自动切换到其他源
-- **永不失败**：最后使用SVG占位图作为兜底，确保100%显示成功
-- 图片为通用摄影作品，仅供学习和演示使用
+- **永不失败**：最后使用占位图作为兜底，确保100%显示成功
+- 图片版权归原作者所有，仅供学习和演示使用
 - 采用手动浏览模式，可以确保每张图片完全加载后再查看
-- 打开浏览器控制台可以查看详细的加载日志
+- 打开浏览器控制台可以查看详细的加载日志和搜索关键词
+- 每张图片底部显示使用的搜索关键词
 
 ## 许可证
 

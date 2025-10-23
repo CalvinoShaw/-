@@ -213,36 +213,65 @@
     </div>
 
     <script>
-        // 战锤40K主题相关的类别和种子
-        const imageThemes = [
-            'space', 'dark', 'warrior', 'armor', 'battle', 'fortress',
-            'gothic', 'future', 'mech', 'robot', 'alien', 'weapon',
-            'city', 'architecture', 'soldier', 'machine', 'medieval',
-            'cyberpunk', 'ship', 'station', 'creature', 'helmet',
-            'power', 'war', 'epic'
+        // 战锤40K主题关键词 - 中英文结合
+        const warhammer40kKeywords = [
+            // 核心概念
+            'warhammer+40k', 'warhammer+40000', 'space+marine', 'imperium',
+            'emperor', 'chaos', 'xenos', 'heresy',
+
+            // 帝国势力
+            'space+marine+armor', 'imperial+guard', 'adeptus+astartes',
+            'ultramarines', 'blood+angels', 'dark+angels', 'space+wolves',
+            'imperial+knight', 'titan+warhammer', 'adeptus+mechanicus',
+
+            // 混沌势力
+            'chaos+space+marine', 'chaos+god', 'khorne', 'nurgle',
+            'tzeentch', 'slaanesh', 'chaos+daemon', 'chaos+warrior',
+
+            // 异种族
+            'ork+warhammer', 'eldar', 'tau+empire', 'tyranid',
+            'necron', 'dark+eldar', 'ork+warboss',
+
+            // 场景与装备
+            'power+armor', 'bolter', 'chainsword', 'dreadnought',
+            'battle+barge', 'gothic+cathedral', 'hive+city', 'battlefield',
+            'terminator+armor', 'plasma+gun', 'space+hulk',
+
+            // 风格关键词（帮助找到相似风格的图片）
+            'grimdark', 'gothic+sci-fi', 'dark+future', 'dieselpunk+armor',
+            'futuristic+warrior', 'space+warfare', 'dystopian+soldier',
+            'cybernetic+warrior', 'armored+soldier', 'medieval+futuristic',
+
+            // 氛围关键词
+            'epic+battle', 'war+machine', 'dark+cathedral', 'industrial+gothic',
+            'apocalyptic+war', 'space+fortress', 'military+sci-fi',
+            'brutal+combat', 'heroic+warrior', 'ancient+technology'
         ];
 
-        // 生成100张图片URL - 使用多个可靠的图片源
+        // 生成100张图片URL - 使用战锤40K主题搜索
         function generateImageUrls() {
             const urls = [];
             const width = 800;
             const height = 600;
 
             for (let i = 0; i < 100; i++) {
+                // 循环使用关键词，确保多样性
+                const keyword = warhammer40kKeywords[i % warhammer40kKeywords.length];
                 const seed = Math.floor(Math.random() * 10000);
 
                 // 为每张图片生成多个备选源
                 urls.push({
                     id: i + 1,
+                    keyword: keyword,
                     sources: [
-                        // Lorem Picsum - 非常稳定可靠
-                        `https://picsum.photos/seed/${seed + i}/800/600`,
-                        // 备选：Lorem Picsum 不同种子
-                        `https://picsum.photos/seed/wh40k${i}/800/600`,
-                        // 备选：Placeholder.com 带标签
+                        // Unsplash 搜索 - 主源，使用战锤40K关键词
+                        `https://source.unsplash.com/${width}x${height}/?${keyword}`,
+                        // Unsplash random with keyword
+                        `https://source.unsplash.com/random/${width}x${height}/?${keyword}`,
+                        // Lorem Picsum 作为备选
+                        `https://picsum.photos/seed/${keyword.replace(/\+/g, '')}${i}/800/600`,
+                        // 带主题标签的占位符
                         `https://via.placeholder.com/800x600/1a1a2e/eee?text=Warhammer+40K+${i + 1}`,
-                        // 备选：DummyImage
-                        `https://dummyimage.com/800x600/1a1a2e/fff&text=Image+${i + 1}`,
                     ]
                 });
             }
@@ -288,7 +317,8 @@
                     }
 
                     const url = sources[currentSourceIndex];
-                    console.log(`尝试加载图片 ${index + 1}，源 ${currentSourceIndex + 1}/${sources.length}: ${url.substring(0, 50)}...`);
+                    const keyword = shuffledData[index]?.keyword || 'unknown';
+                    console.log(`尝试加载图片 ${index + 1} [${keyword}]，源 ${currentSourceIndex + 1}/${sources.length}`);
 
                     const img = new Image();
                     img.crossOrigin = "anonymous";
@@ -303,7 +333,8 @@
 
                     img.onload = () => {
                         clearTimeout(timeout);
-                        console.log(`✓ 图片 ${index + 1} 从源 ${currentSourceIndex + 1} 加载成功`);
+                        const keyword = shuffledData[index]?.keyword || 'unknown';
+                        console.log(`✓ 图片 ${index + 1} [${keyword}] 从源 ${currentSourceIndex + 1} 加载成功`);
                         loadedImages.add(index);
                         resolve(img);
                     };
@@ -387,11 +418,13 @@
             slide.innerHTML = '';
             if (imageCache[index]) {
                 const img = imageCache[index].cloneNode();
-                img.alt = `战锤40K 图片 ${index + 1}`;
+                const keyword = shuffledData[index]?.keyword || 'unknown';
+                img.alt = `战锤40K 图片 ${index + 1} - ${keyword}`;
                 slide.appendChild(img);
 
                 const loadedStatus = loadedImages.has(index) ? '✓ 已加载' : '占位图';
-                loadStatus.textContent = loadedStatus;
+                const keywordDisplay = keyword.replace(/\+/g, ' ');
+                loadStatus.textContent = `${loadedStatus} | ${keywordDisplay}`;
             } else {
                 loadStatus.textContent = '加载失败';
             }
