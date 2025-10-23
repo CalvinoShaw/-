@@ -399,34 +399,53 @@
             imageLoading.classList.remove('show');
             info.innerHTML = `图片 ${index + 1} / ${shuffledData.length}<br><span class="loading-status">${loadStatus.textContent}</span>`;
 
-            // 预加载下一张和上一张
+            // 预加载后续5张图片和上一张
             preloadAdjacentImages(index);
         }
 
-        // 预加载相邻的图片
+        // 预加载后续图片（优化版：预加载后续5张图片）
         async function preloadAdjacentImages(index) {
-            const nextIndex = (index + 1) % shuffledData.length;
+            console.log(`开始预加载：当前索引 ${index + 1}`);
+
+            // 预加载上一张（用户可能往回浏览）
             const prevIndex = (index - 1 + shuffledData.length) % shuffledData.length;
-
-            // 预加载下一张
-            if (!imageCache[nextIndex]) {
-                loadImageReliably(shuffledData[nextIndex], nextIndex).then(img => {
-                    imageCache[nextIndex] = img;
-                    console.log(`后台预加载下一张完成: ${nextIndex + 1}`);
-                }).catch(err => {
-                    console.error(`预加载下一张失败: ${nextIndex + 1}`, err);
-                });
-            }
-
-            // 预加载上一张
             if (!imageCache[prevIndex]) {
                 loadImageReliably(shuffledData[prevIndex], prevIndex).then(img => {
                     imageCache[prevIndex] = img;
-                    console.log(`后台预加载上一张完成: ${prevIndex + 1}`);
+                    console.log(`✓ 预加载上一张完成: ${prevIndex + 1}`);
                 }).catch(err => {
-                    console.error(`预加载上一张失败: ${prevIndex + 1}`, err);
+                    console.error(`✗ 预加载上一张失败: ${prevIndex + 1}`, err);
+                });
+            } else {
+                console.log(`⊙ 上一张已缓存: ${prevIndex + 1}`);
+            }
+
+            // 预加载后续5张图片
+            const preloadCount = 5;
+            let loadedCount = 0;
+            let skippedCount = 0;
+
+            for (let i = 1; i <= preloadCount; i++) {
+                const nextIndex = (index + i) % shuffledData.length;
+
+                // 检查是否已经缓存，避免重复加载
+                if (imageCache[nextIndex]) {
+                    skippedCount++;
+                    console.log(`⊙ 图片 ${nextIndex + 1} 已缓存，跳过`);
+                    continue;
+                }
+
+                // 后台异步加载
+                loadImageReliably(shuffledData[nextIndex], nextIndex).then(img => {
+                    imageCache[nextIndex] = img;
+                    loadedCount++;
+                    console.log(`✓ 预加载完成 [${i}/5]: 图片 ${nextIndex + 1}`);
+                }).catch(err => {
+                    console.error(`✗ 预加载失败 [${i}/5]: 图片 ${nextIndex + 1}`, err);
                 });
             }
+
+            console.log(`预加载任务已启动：后续5张图片 (已缓存: ${skippedCount}张)`);
         }
 
         // 显示下一张图片
